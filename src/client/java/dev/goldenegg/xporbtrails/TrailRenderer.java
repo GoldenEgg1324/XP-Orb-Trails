@@ -11,7 +11,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.CoreShaders;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.phys.Vec3;
 
@@ -152,7 +152,7 @@ public final class TrailRenderer {
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
         RenderSystem.disableCull();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShader(CoreShaders.POSITION_COLOR);
         BufferUploader.drawWithShader(vertices.buildOrThrow());
         RenderSystem.enableCull();
         RenderSystem.depthMask(true);
@@ -418,7 +418,3 @@ public final class TrailRenderer {
     }
 
     private record Point(Vec3 position, long time) { }
-    private record Sample(Vec3 position, long time) { }
-    private record RenderTrail(List<Sample> samples, long now, double opacity, double flashProgress) { }
-    private record Frame(Vec3 normal, Vec3 binormal) { }
-}
