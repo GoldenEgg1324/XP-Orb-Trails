@@ -43,5 +43,5 @@ jobs:
         run: |
           for jar in build/libs/*.jar; do
             case "$jar" in *-sources.jar) continue;; esac
-            gh release upload 1.0.0 "$jar" --clobber
+            gh release upload v1.0.0 "$jar" --clobber
           done
