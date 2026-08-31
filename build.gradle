@@ -28,21 +28,29 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	modCompileOnly "com.terraformersmc:modmenu:20.0.1"
+	modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 
 }
 
 processResources {
 	def version = project.version
 	inputs.property "version", version
+	inputs.property "minecraft_dependency", project.minecraft_dependency
+	inputs.property "fabric_api_dependency", project.fabric_api_dependency
+	inputs.property "java_version", project.java_version
 
 	filesMatching("fabric.mod.json") {
-		expand "version": version
+		expand(
+			version: version,
+			minecraft_dependency: project.minecraft_dependency,
+			fabric_api_dependency: project.fabric_api_dependency,
+			java_version: project.java_version
+		)
 	}
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
+	it.options.release = Integer.parseInt(project.java_version)
 }
 
 java {
@@ -51,8 +59,8 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+	sourceCompatibility = JavaVersion.toVersion(project.java_version)
+	targetCompatibility = JavaVersion.toVersion(project.java_version)
 }
 
 jar {
