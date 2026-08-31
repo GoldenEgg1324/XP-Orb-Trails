@@ -1,10 +1,9 @@
 package dev.goldenegg.xporbtrails;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 import java.util.Locale;
@@ -51,59 +50,59 @@ public final class ColorPickerScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-        super.extractRenderState(graphics, mouseX, mouseY, delta);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        super.render(graphics, mouseX, mouseY, delta);
         int px = width / 2 - 80, py = 48, pw = 160, ph = 112;
-        graphics.centeredText(font, title, width / 2, 16, 0xFFFFFFFF);
+        graphics.drawCenteredString(font, title, width / 2, 16, 0xFFFFFFFF);
         int hueColor = hsvToRgb(hue, 1.0F, 1.0F);
         for (int x = 0; x < pw; x++) {
             float sat = x / (float) (pw - 1);
             graphics.fillGradient(px + x, py, px + x + 1, py + ph,
                     0xFF000000 | mix(0xFFFFFF, hueColor, sat), 0xFF000000);
         }
-        graphics.outline(px - 1, py - 1, pw + 2, ph + 2, 0xFFFFFFFF);
+        graphics.renderOutline(px - 1, py - 1, pw + 2, ph + 2, 0xFFFFFFFF);
         int sx = px + Math.round(saturation * (pw - 1));
         int sy = py + Math.round((1.0F - brightness) * (ph - 1));
-        graphics.outline(sx - 3, sy - 3, 7, 7, 0xFFFFFFFF);
-        graphics.outline(sx - 2, sy - 2, 5, 5, 0xFF000000);
+        graphics.renderOutline(sx - 3, sy - 3, 7, 7, 0xFFFFFFFF);
+        graphics.renderOutline(sx - 2, sy - 2, 5, 5, 0xFF000000);
 
         int hy = 174, hh = 12;
         for (int x = 0; x < pw; x++) {
             int color = hsvToRgb(x / (float) (pw - 1), 1.0F, 1.0F);
             graphics.fill(px + x, hy, px + x + 1, hy + hh, 0xFF000000 | color);
         }
-        graphics.outline(px - 1, hy - 1, pw + 2, hh + 2, 0xFFFFFFFF);
+        graphics.renderOutline(px - 1, hy - 1, pw + 2, hh + 2, 0xFFFFFFFF);
         int hx = px + Math.round(hue * (pw - 1));
-        graphics.outline(hx - 2, hy - 2, 5, hh + 4, 0xFFFFFFFF);
+        graphics.renderOutline(hx - 2, hy - 2, 5, hh + 4, 0xFFFFFFFF);
         graphics.fill(px + pw + 12, py, px + pw + 42, py + 30, 0xFF000000 | currentColor());
-        graphics.outline(px + pw + 11, py - 1, 32, 32, 0xFFFFFFFF);
-        graphics.text(font, Component.translatable("screen.xporbtrails.hex"), px, 193, 0xFFA0A0A0);
+        graphics.renderOutline(px + pw + 11, py - 1, 32, 32, 0xFFFFFFFF);
+        graphics.drawString(font, Component.translatable("screen.xporbtrails.hex"), px, 193, 0xFFA0A0A0);
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
-        if (super.mouseClicked(event, doubled)) return true;
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (super.mouseClicked(mouseX, mouseY, button)) return true;
         int px = width / 2 - 80;
-        if (inside(event.x(), event.y(), px, 48, 160, 112)) {
-            draggingPalette = true; updatePalette(event.x(), event.y()); return true;
+        if (inside(mouseX, mouseY, px, 48, 160, 112)) {
+            draggingPalette = true; updatePalette(mouseX, mouseY); return true;
         }
-        if (inside(event.x(), event.y(), px, 174, 160, 12)) {
-            draggingHue = true; updateHue(event.x()); return true;
+        if (inside(mouseX, mouseY, px, 174, 160, 12)) {
+            draggingHue = true; updateHue(mouseX); return true;
         }
         return false;
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
-        if (draggingPalette) { updatePalette(event.x(), event.y()); return true; }
-        if (draggingHue) { updateHue(event.x()); return true; }
-        return super.mouseDragged(event, dx, dy);
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dx, double dy) {
+        if (draggingPalette) { updatePalette(mouseX, mouseY); return true; }
+        if (draggingHue) { updateHue(mouseX); return true; }
+        return super.mouseDragged(mouseX, mouseY, button, dx, dy);
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
         draggingPalette = false; draggingHue = false;
-        return super.mouseReleased(event);
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     private void updatePalette(double mouseX, double mouseY) {
@@ -128,7 +127,7 @@ public final class ColorPickerScreen extends Screen {
         }
     }
 
-    @Override public void onClose() { if (minecraft != null) minecraft.gui.setScreen(parent); }
+    @Override public void onClose() { if (minecraft != null) minecraft.setScreen(parent); }
     @Override public boolean isPauseScreen() { return false; }
     private int currentColor() { return hsvToRgb(hue, saturation, brightness); }
     private static boolean inside(double x, double y, int bx, int by, int bw, int bh) { return x >= bx && x < bx + bw && y >= by && y < by + bh; }

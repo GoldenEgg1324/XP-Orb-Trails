@@ -1,6 +1,6 @@
 package dev.goldenegg.xporbtrails;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -24,9 +24,9 @@ public final class TrailPreviewScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-        super.extractRenderState(graphics, mouseX, mouseY, delta);
-        graphics.centeredText(font, title, width / 2, 10, 0xFFFFFFFF);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        super.render(graphics, mouseX, mouseY, delta);
+        graphics.drawCenteredString(font, title, width / 2, 10, 0xFFFFFFFF);
 
         int canvasW = Math.max(260, Math.min(640, width - 32));
         int canvasH = Math.max(120, height - 76);
@@ -36,7 +36,7 @@ public final class TrailPreviewScreen extends Screen {
         drawPreview(graphics, x0, y0, canvasW, canvasH);
     }
 
-    private void drawBackdrop(GuiGraphicsExtractor graphics, int x, int y, int w, int h) {
+    private void drawBackdrop(GuiGraphics graphics, int x, int y, int w, int h) {
         graphics.fill(x, y, x + w, y + h, 0xE80A1018);
         for (int band = 0; band < 8; band++) {
             int top = y + band * h / 8;
@@ -46,8 +46,8 @@ public final class TrailPreviewScreen extends Screen {
         }
         for (int gx = x + 16; gx < x + w; gx += 32) graphics.fill(gx, y + 1, gx + 1, y + h - 1, 0x163E8060);
         for (int gy = y + 16; gy < y + h; gy += 32) graphics.fill(x + 1, gy, x + w - 1, gy + 1, 0x163E8060);
-        graphics.outline(x, y, w, h, 0xAA6EDC96);
-        graphics.outline(x + 2, y + 2, w - 4, h - 4, 0x443B8E62);
+        graphics.renderOutline(x, y, w, h, 0xAA6EDC96);
+        graphics.renderOutline(x + 2, y + 2, w - 4, h - 4, 0x443B8E62);
 
         double seconds = System.nanoTime() / 1_000_000_000.0;
         for (int i = 0; i < 30; i++) {
@@ -58,7 +58,7 @@ public final class TrailPreviewScreen extends Screen {
         }
     }
 
-    private void drawPreview(GuiGraphicsExtractor graphics, int x, int y, int w, int h) {
+    private void drawPreview(GuiGraphics graphics, int x, int y, int w, int h) {
         TrailConfig c = XpOrbTrailsClient.CONFIG;
         double seconds = System.nanoTime() / 1_000_000_000.0;
         double elapsed = (System.nanoTime() - demoStartNanos) / 1_000_000_000.0;
@@ -73,8 +73,8 @@ public final class TrailPreviewScreen extends Screen {
                 .append(": ").append(Component.translatable("screen.xporbtrails.mode." + c.colorMode));
         Component flash = Component.translatable("screen.xporbtrails.preview_flash")
                 .append(": ").append(Component.translatable("screen.xporbtrails.flash_style." + c.pickupFlashStyle));
-        graphics.text(font, mode, x + 10, y + 9, 0xFFBFD9C8);
-        graphics.text(font, flash, x + 10, y + 21, 0xFF8EB59B);
+        graphics.drawString(font, mode, x + 10, y + 9, 0xFFBFD9C8);
+        graphics.drawString(font, flash, x + 10, y + 21, 0xFF8EB59B);
 
         int samples = Math.max(36, Math.min(90, w / 6));
         double visibleLength = Math.min(1.0, 0.28 + c.lifetimeSeconds / 7.5);
@@ -100,10 +100,10 @@ public final class TrailPreviewScreen extends Screen {
             drawFlash(graphics, headX, headY, p, c, seconds);
         }
 
-        graphics.centeredText(font, Component.translatable("screen.xporbtrails.preview_hint"), x + w / 2, y + h - 15, 0xAAADC8B6);
+        graphics.drawCenteredString(font, Component.translatable("screen.xporbtrails.preview_hint"), x + w / 2, y + h - 15, 0xAAADC8B6);
     }
 
-    private void glowSquare(GuiGraphicsExtractor graphics, int x, int y, int radius, int rgb, int alpha) {
+    private void glowSquare(GuiGraphics graphics, int x, int y, int radius, int rgb, int alpha) {
         int outer = radius + 4;
         graphics.fill(x - outer, y - outer, x + outer + 1, y + outer + 1, (alpha / 7 << 24) | rgb);
         int middle = radius + 2;
@@ -112,14 +112,14 @@ public final class TrailPreviewScreen extends Screen {
         if (radius >= 3) graphics.fill(x - radius / 2, y - radius / 2, x + radius / 2 + 1, y + radius / 2 + 1, (Math.min(255, alpha + 55) << 24) | 0xE8FFD8);
     }
 
-    private void drawOrb(GuiGraphicsExtractor graphics, int x, int y, int color) {
+    private void drawOrb(GuiGraphics graphics, int x, int y, int color) {
         graphics.fill(x - 10, y - 10, x + 11, y + 11, 0x183CFF70);
         graphics.fill(x - 7, y - 7, x + 8, y + 8, 0x443CFF70);
         graphics.fill(x - 4, y - 4, x + 5, y + 5, 0xFF000000 | color);
         graphics.fill(x - 2, y - 2, x + 3, y + 3, 0xFFFFFFC2);
     }
 
-    private void drawFlash(GuiGraphicsExtractor graphics, int x, int y, double progress, TrailConfig c, double seconds) {
+    private void drawFlash(GuiGraphics graphics, int x, int y, double progress, TrailConfig c, double seconds) {
         double eased = smooth(progress);
         int radius = Math.max(3, (int) Math.round((8 + 40 * eased) * c.pickupFlashSize));
         int alpha = clamp255((int) (210 * c.pickupFlashStrength * (1.0 - smooth(progress))));
@@ -134,13 +134,13 @@ public final class TrailPreviewScreen extends Screen {
                 graphics.fill(x + d, y - d, x + d + 2, y - d + 2, color);
             }
         } else if ("ring".equals(c.pickupFlashStyle)) {
-            graphics.outline(x - radius, y - radius, radius * 2, radius * 2, color);
-            if (radius > 8) graphics.outline(x - radius + 2, y - radius + 2, radius * 2 - 4, radius * 2 - 4, (alpha / 2 << 24) | rgb);
+            graphics.renderOutline(x - radius, y - radius, radius * 2, radius * 2, color);
+            if (radius > 8) graphics.renderOutline(x - radius + 2, y - radius + 2, radius * 2 - 4, radius * 2 - 4, (alpha / 2 << 24) | rgb);
         } else {
             graphics.fill(x - radius, y - radius, x + radius, y + radius, (alpha / 10 << 24) | rgb);
-            graphics.outline(x - radius, y - radius, radius * 2, radius * 2, color);
+            graphics.renderOutline(x - radius, y - radius, radius * 2, radius * 2, color);
             int inner = Math.max(2, radius / 2);
-            graphics.outline(x - inner, y - inner, inner * 2, inner * 2, (alpha / 2 << 24) | rgb);
+            graphics.renderOutline(x - inner, y - inner, inner * 2, inner * 2, (alpha / 2 << 24) | rgb);
         }
     }
 
@@ -197,7 +197,7 @@ public final class TrailPreviewScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (minecraft != null) minecraft.gui.setScreen(parent);
+        if (minecraft != null) minecraft.setScreen(parent);
     }
 
     @Override public boolean isPauseScreen() { return false; }

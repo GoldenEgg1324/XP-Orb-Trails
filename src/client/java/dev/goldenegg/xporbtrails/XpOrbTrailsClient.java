@@ -5,13 +5,11 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import java.io.IOException;
@@ -50,15 +48,13 @@ public final class XpOrbTrailsClient implements ClientModInitializer {
             saveConfig();
         }
 
-        LevelExtractionEvents.END_EXTRACTION.register(TrailRenderer::extract);
-        LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(TrailRenderer::render);
+        WorldRenderEvents.AFTER_TRANSLUCENT.register(TrailRenderer::render);
 
-        KeyMapping.Category category = KeyMapping.Category.register(
-                Identifier.fromNamespaceAndPath("xporbtrails", "settings"));
         KeyMapping openSettings = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.xporbtrails.open_settings", InputConstants.UNKNOWN.getValue(), category));
+                "key.xporbtrails.open_settings", InputConstants.UNKNOWN.getValue(),
+                "key.categories.xporbtrails.settings"));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            while (openSettings.consumeClick()) client.gui.setScreen(createConfigScreen(client.gui.screen()));
+            while (openSettings.consumeClick()) client.setScreen(createConfigScreen(client.screen));
         });
     }
 

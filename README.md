@@ -1,6 +1,6 @@
 # XP Orb Trails
 
-XP Orb Trails is a client-only Fabric mod for Minecraft 26.2. It gives moving
+XP Orb Trails is a client-only Fabric mod for Minecraft 1.21–1.21.1. It gives moving
 experience orbs smooth, colorful light trails and an optional pickup flash,
 without requiring shaders or any server-side installation.
 
@@ -18,8 +18,8 @@ without requiring shaders or any server-side installation.
 ## Installation
 
 1. Install Minecraft 26.2 with Fabric Loader 0.19.5 or newer.
-2. Put `xp-orb-trails-1.0.0+mc26.2.jar` in the client `mods` folder.
-3. Fabric API 0.158.0 or newer is required. The server does not need this mod.
+2. Put `xp-orb-trails-1.0.0+mc1.21-1.21.1.jar` in the client `mods` folder.
+3. Fabric API 0.116.0 or newer is required. The server does not need this mod.
 
 ## Configuration
 
@@ -35,10 +35,10 @@ continues loading.
 
 ## Compatibility
 
-- Minecraft 26.2
-- Fabric Loader 0.19.5 or newer
-- Fabric API 0.158.0+26.2 or newer
-- Java 25 or newer
+- Minecraft 1.21 or 1.21.1
+- Fabric Loader 0.16.14 or newer
+- Fabric API 0.116.0+1.21.1 or newer
+- Java 21 or newer
 - Mod Menu is optional but recommended
 
 The mod is client-only. It does not need to be installed on a server. Shader

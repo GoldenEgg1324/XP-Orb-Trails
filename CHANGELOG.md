@@ -2,7 +2,7 @@
 
 ## 1.0.0 - 2026-08-31
 
-First public release for Minecraft 26.2.
+Minecraft 1.21–1.21.1 compatibility build of the first public release.
 
 - Add smooth, interpolated three-dimensional trails to moving experience orbs.
 - Add solid, gradient, and animated rainbow color modes with an in-game color picker.
