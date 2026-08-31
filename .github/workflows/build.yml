@@ -1,6 +1,5 @@
 name: build
 on: [pull_request, push]
-
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -8,12 +7,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - minecraft-version: '1.21.2'
-            fabric-api-version: '0.106.1+1.21.2'
-          - minecraft-version: '1.21.3'
-            fabric-api-version: '0.114.1+1.21.3'
-          - minecraft-version: '1.21.4'
-            fabric-api-version: '0.119.2+1.21.4'
+          - minecraft-version: '1.21.5'
+            fabric-api-version: '0.125.0+1.21.5'
+            modmenu-version: '14.0.0'
+          - minecraft-version: '1.21.6'
+            fabric-api-version: '0.124.4+1.21.6'
+            modmenu-version: '15.0.0'
+          - minecraft-version: '1.21.7'
+            fabric-api-version: '0.128.2+1.21.7'
+            modmenu-version: '15.0.0'
+          - minecraft-version: '1.21.8'
+            fabric-api-version: '0.129.0+1.21.8'
+            modmenu-version: '15.0.0'
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v6
@@ -27,6 +32,7 @@ jobs:
           ./gradlew build
           -Pminecraft_version=${{ matrix.minecraft-version }}
           -Pfabric_api_version=${{ matrix.fabric-api-version }}
+          -Pmodmenu_version=${{ matrix.modmenu-version }}
           -Pversion=1.0.0+mc${{ matrix.minecraft-version }}
           -Pminecraft_dependency=${{ matrix.minecraft-version }}
           -Pfabric_api_dependency=">=${{ matrix.fabric-api-version }}"
