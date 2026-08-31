@@ -1,0 +1,16 @@
+{
+	"required": true,
+	"package": "dev.goldenegg.xporbtrails.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"ExperienceOrbMixin",
+		"GameRendererMixin",
+		"RenderPipelinesAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
