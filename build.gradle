@@ -4,7 +4,7 @@ plugins {
 }
 
 base {
-	archivesName = "xp-orb-trails-${project.version}+mc1.21-1.21.1"
+	archivesName = "xp-orb-trails"
 }
 
 repositories {
