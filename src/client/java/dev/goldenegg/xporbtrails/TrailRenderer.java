@@ -418,3 +418,7 @@ public final class TrailRenderer {
     }
 
     private record Point(Vec3 position, long time) { }
+    private record Sample(Vec3 position, long time) { }
+    private record RenderTrail(List<Sample> samples, long now, double opacity, double flashProgress) { }
+    private record Frame(Vec3 normal, Vec3 binormal) { }
+}
