@@ -1,5 +1,7 @@
 name: build
 on: [pull_request, push]
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -34,3 +36,12 @@ jobs:
         with:
           name: XP-Orb-Trails-${{ matrix.minecraft-version }}
           path: build/libs/*.jar
+      - name: upload binary jar to 1.0.0 release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for jar in build/libs/*.jar; do
+            case "$jar" in *-sources.jar) continue;; esac
+            gh release upload 1.0.0 "$jar" --clobber
+          done
