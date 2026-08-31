@@ -7,7 +7,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.Screen;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -50,7 +50,7 @@ public final class XpOrbTrailsClient implements ClientModInitializer {
 
         WorldRenderEvents.AFTER_TRANSLUCENT.register(TrailRenderer::render);
 
-        KeyMapping openSettings = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        KeyMapping openSettings = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.xporbtrails.open_settings", InputConstants.UNKNOWN.getValue(),
                 "key.categories.xporbtrails.settings"));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
