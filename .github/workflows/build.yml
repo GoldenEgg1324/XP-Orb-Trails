@@ -9,6 +9,16 @@ on: [pull_request, push]
 jobs:
   build:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - minecraft-version: '1.21'
+            fabric-api-version: '0.100.8+1.21'
+            artifact-suffix: 'mc1.21'
+          - minecraft-version: '1.21.1'
+            fabric-api-version: '0.116.15+1.21.1'
+            artifact-suffix: 'mc1.21.1'
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
@@ -22,9 +32,12 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       - name: build
-        run: ./gradlew build
+        run: >-
+          ./gradlew build
+          -Pminecraft_version=${{ matrix.minecraft-version }}
+          -Pfabric_api_version=${{ matrix.fabric-api-version }}
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: Artifacts
+          name: Artifacts-${{ matrix.artifact-suffix }}
           path: build/libs/
