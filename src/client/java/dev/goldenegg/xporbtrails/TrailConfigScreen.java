@@ -84,8 +84,8 @@ public final class TrailConfigScreen extends Screen {
         addSlider(right, 122, "screen.xporbtrails.opacity", c.opacity, 0.05, 1.0, 2, v -> c.opacity = v);
 
         List<String> modes = List.of("solid", "gradient", "rainbow");
-        addRenderableWidget(withTip(CycleButton.<String>builder(v -> Component.translatable("screen.xporbtrails.mode." + v), c.colorMode)
-                .withValues(modes).create(left, 154, 150, 20, Component.translatable("screen.xporbtrails.color_mode"),
+        addRenderableWidget(withTip(CycleButton.<String>builder(v -> Component.translatable("screen.xporbtrails.mode." + v))
+                .withValues(modes).withInitialValue(c.colorMode).create(left, 154, 150, 20, Component.translatable("screen.xporbtrails.color_mode"),
                         (b, value) -> { c.colorMode = value; rebuildWidgets(); }), "screen.xporbtrails.color_mode.tip"));
         ConfigSlider rainbow = addSlider(right, 154, "screen.xporbtrails.rainbow_speed", c.rainbowSpeed, 0.02, 1.0, 2, v -> c.rainbowSpeed = v);
         rainbow.active = "rainbow".equals(c.colorMode);
@@ -93,7 +93,8 @@ public final class TrailConfigScreen extends Screen {
         List<Preset> allPresets = new ArrayList<>(PRESETS);
         for (TrailConfig.SavedPreset saved : c.savedPresets) allPresets.add(new Preset(saved.name, saved.startColor, saved.endColor));
         if (presetIndex >= allPresets.size()) presetIndex = 0;
-        addRenderableWidget(CycleButton.<Preset>builder(p -> Component.literal(p.name()), allPresets.get(presetIndex)).withValues(allPresets)
+        addRenderableWidget(CycleButton.<Preset>builder(p -> Component.literal(p.name())).withValues(allPresets)
+                .withInitialValue(allPresets.get(presetIndex))
                 .create(left, 186, 218, 20, Component.translatable("screen.xporbtrails.preset"), (b, preset) -> {
                     presetIndex = allPresets.indexOf(preset);
                     if (preset.start() >= 0) {
@@ -125,8 +126,8 @@ public final class TrailConfigScreen extends Screen {
         addSlider(left, 186, "screen.xporbtrails.head_width", c.headWidthScale, 0.1, 2.0, 2, v -> c.headWidthScale = v);
         if (shapeIndex >= SHAPES.size()) shapeIndex = 0;
         addRenderableWidget(withTip(CycleButton.<ShapePreset>builder(
-                shape -> Component.translatable("screen.xporbtrails.shape." + shape.key()), SHAPES.get(shapeIndex))
-                .withValues(SHAPES).create(right, 186, 150, 20, Component.translatable("screen.xporbtrails.shape_preset"), (b, shape) -> {
+                shape -> Component.translatable("screen.xporbtrails.shape." + shape.key()))
+                .withValues(SHAPES).withInitialValue(SHAPES.get(shapeIndex)).create(right, 186, 150, 20, Component.translatable("screen.xporbtrails.shape_preset"), (b, shape) -> {
                     shapeIndex = SHAPES.indexOf(shape);
                     if (shape.tail() >= 0.0) {
                         c.tailWidthScale = shape.tail();
@@ -147,8 +148,8 @@ public final class TrailConfigScreen extends Screen {
         ConfigSlider duration = addSlider(left, 104, "screen.xporbtrails.pickup_flash_duration", c.pickupFlashSeconds, 0.08, 1.0, 2, v -> c.pickupFlashSeconds = v);
         ConfigSlider size = addSlider(right, 104, "screen.xporbtrails.pickup_flash_size", c.pickupFlashSize, 0.25, 2.0, 2, v -> c.pickupFlashSize = v);
         List<String> styles = List.of("soft", "star", "ring");
-        CycleButton<String> style = withTip(CycleButton.<String>builder(v -> Component.translatable("screen.xporbtrails.flash_style." + v), c.pickupFlashStyle)
-                .withValues(styles).create(left, 136, 150, 20, Component.translatable("screen.xporbtrails.flash_style"),
+        CycleButton<String> style = withTip(CycleButton.<String>builder(v -> Component.translatable("screen.xporbtrails.flash_style." + v))
+                .withValues(styles).withInitialValue(c.pickupFlashStyle).create(left, 136, 150, 20, Component.translatable("screen.xporbtrails.flash_style"),
                         (b, value) -> c.pickupFlashStyle = value), "screen.xporbtrails.flash_style.tip");
         addRenderableWidget(style);
         strength.active = c.pickupFlash;
@@ -162,8 +163,8 @@ public final class TrailConfigScreen extends Screen {
         int left = center - 154;
         List<ProfileChoice> profiles = allProfiles(c);
         if (profileIndex >= profiles.size()) profileIndex = 0;
-        CycleButton<ProfileChoice> selector = CycleButton.<ProfileChoice>builder(this::profileName, profiles.get(profileIndex))
-                .withValues(profiles).create(left, 72, 218, 20, Component.translatable("screen.xporbtrails.profile"),
+        CycleButton<ProfileChoice> selector = CycleButton.<ProfileChoice>builder(this::profileName)
+                .withValues(profiles).withInitialValue(profiles.get(profileIndex)).create(left, 72, 218, 20, Component.translatable("screen.xporbtrails.profile"),
                         (b, selected) -> { profileIndex = profiles.indexOf(selected); deleteArmedIndex = -1; rebuildWidgets(); });
         addRenderableWidget(selector);
         addRenderableWidget(Button.builder(Component.translatable("screen.xporbtrails.apply_profile"), b -> {
