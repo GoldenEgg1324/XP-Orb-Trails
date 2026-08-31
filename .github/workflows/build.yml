@@ -5,6 +5,8 @@
 
 name: build
 on: [pull_request, push]
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -36,8 +38,20 @@ jobs:
           ./gradlew build
           -Pminecraft_version=${{ matrix.minecraft-version }}
           -Pfabric_api_version=${{ matrix.fabric-api-version }}
+          -Pversion=1.0.0+mc${{ matrix.minecraft-version }}
+          -Pminecraft_dependency=${{ matrix.minecraft-version }}
+          -Pfabric_api_dependency=">=${{ matrix.fabric-api-version }}"
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
           name: Artifacts-${{ matrix.artifact-suffix }}
           path: build/libs/
+      - name: upload binary jar to v1.0.0 release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for jar in build/libs/*.jar; do
+            case "$jar" in *-sources.jar) continue;; esac
+            gh release upload v1.0.0 "$jar" --clobber
+          done
