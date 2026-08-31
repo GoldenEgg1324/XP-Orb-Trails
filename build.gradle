@@ -2,68 +2,37 @@ plugins {
 	id 'fabric-loom' version "${loom_version}"
 	id 'maven-publish'
 }
-
-base {
-	archivesName = "xp-orb-trails"
-}
-
-repositories {
-	maven { url = "https://maven.terraformersmc.com/releases/" }
-}
-
+base { archivesName = "xp-orb-trails" }
+repositories { maven { url = "https://maven.terraformersmc.com/releases/" } }
 loom {
 	splitEnvironmentSourceSets()
-	mods {
-		"xporbtrails" {
-			sourceSet sourceSets.main
-			sourceSet sourceSets.client
-		}
-	}
+	mods { "xporbtrails" { sourceSet sourceSets.main; sourceSet sourceSets.client } }
 }
-
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings loom.officialMojangMappings()
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	modCompileOnly "com.terraformersmc:modmenu:11.0.3"
+	modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 }
-
 processResources {
 	inputs.property "version", project.version
 	inputs.property "minecraft_dependency", project.minecraft_dependency
 	inputs.property "fabric_api_dependency", project.fabric_api_dependency
 	filesMatching("fabric.mod.json") {
-		expand(
-			version: project.version,
-			minecraft_dependency: project.minecraft_dependency,
-			fabric_api_dependency: project.fabric_api_dependency
-		)
+		expand(version: project.version, minecraft_dependency: project.minecraft_dependency,
+			fabric_api_dependency: project.fabric_api_dependency)
 	}
 }
-
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
-}
-
+tasks.withType(JavaCompile).configureEach { it.options.release = 21 }
 java {
 	withSourcesJar()
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
 }
-
 jar {
 	def projectName = project.name
 	inputs.property "projectName", projectName
-	from("LICENSE") {
-		rename { "${it}_$projectName"}
-	}
+	from("LICENSE") { rename { "${it}_$projectName"} }
 }
-
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			from components.java
-		}
-	}
-}
+publishing { publications { create("mavenJava", MavenPublication) { from components.java } } }
