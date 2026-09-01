@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
 
@@ -99,7 +101,7 @@ public final class TrailRenderer {
             point = point.subtract(motion.scale(cfg.motionShift * t / speed));
         }
         if (cfg.cameraPush > 0.0 && client.gameRenderer != null) {
-            Vec3 away = point.subtract(client.gameRenderer.getMainCamera().getPosition());
+            Vec3 away = point.subtract(client.getCameraEntity() == null ? Vec3.ZERO : client.getCameraEntity().getPosition(1.0F));
             double length = away.length();
             if (length > 1.0E-6) point = point.add(away.scale(cfg.cameraPush / length));
         }
@@ -113,7 +115,7 @@ public final class TrailRenderer {
         long now = System.nanoTime();
         TrailConfig cfg = XpOrbTrailsClient.CONFIG;
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
-        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        Vec3 camera = Minecraft.getInstance().getCameraEntity() == null ? Vec3.ZERO : Minecraft.getInstance().getCameraEntity().getPosition(1.0F);
         double rangeSq = cfg.renderRange * cfg.renderRange;
         List<RenderTrail> snapshot = new ArrayList<>();
 
@@ -162,7 +164,7 @@ public final class TrailRenderer {
 
         RenderPipeline pipeline = XpOrbTrailsClient.CONFIG.additiveGlow ? ADDITIVE_PIPELINE : TRANSLUCENT_PIPELINE;
         BufferBuilder vertices = new BufferBuilder(ALLOCATOR, pipeline.getVertexFormatMode(), pipeline.getVertexFormat());
-        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        Vec3 camera = Minecraft.getInstance().getCameraEntity() == null ? Vec3.ZERO : Minecraft.getInstance().getCameraEntity().getPosition(1.0F);
         TrailConfig cfg = XpOrbTrailsClient.CONFIG;
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
 
@@ -200,8 +202,8 @@ public final class TrailRenderer {
         mesh.sortQuads(ALLOCATOR, RenderSystem.getProjectionType().vertexSorting());
         GpuBuffer indices = pipeline.getVertexFormat().uploadImmediateIndexBuffer(mesh.indexBuffer());
         GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().writeTransform(
-                RenderSystem.getModelViewMatrix(), COLOR_MODULATOR, RenderSystem.getModelOffset(),
-                RenderSystem.getTextureMatrix(), 1.0F);
+                RenderSystem.getModelViewMatrixCopy(), COLOR_MODULATOR, new Vector3f(),
+                new Matrix4f());
         Minecraft client = Minecraft.getInstance();
         try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
                 () -> "XP Orb Trails", client.getMainRenderTarget().getColorTextureView(), OptionalInt.empty(),
