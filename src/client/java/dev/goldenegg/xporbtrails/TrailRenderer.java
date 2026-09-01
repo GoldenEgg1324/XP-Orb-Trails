@@ -13,7 +13,8 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MappableRingBuffer;
@@ -101,32 +102,29 @@ public final class TrailRenderer {
             point = point.subtract(motion.scale(cfg.motionShift * t / speed));
         }
         if (cfg.cameraPush > 0.0 && client.gameRenderer != null) {
-            Vec3 away = point.subtract(client.getCameraEntity() == null ? Vec3.ZERO : client.getCameraEntity().getPosition(1.0F));
+            Vec3 away = point.subtract(client.gameRenderer.mainCamera().position());
             double length = away.length();
             if (length > 1.0E-6) point = point.add(away.scale(cfg.cameraPush / length));
         }
         return point;
     }
 
-    private static synchronized void extract() {
-        Minecraft client = Minecraft.getInstance();
-        ClientLevel level = client.level;
-        if (level == null) return;
+    public static synchronized void extract(LevelExtractionContext context) {
         long now = System.nanoTime();
         TrailConfig cfg = XpOrbTrailsClient.CONFIG;
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
-        Vec3 camera = Minecraft.getInstance().getCameraEntity() == null ? Vec3.ZERO : Minecraft.getInstance().getCameraEntity().getPosition(1.0F);
+        Vec3 camera = context.camera().position();
         double rangeSq = cfg.renderRange * cfg.renderRange;
         List<RenderTrail> snapshot = new ArrayList<>();
 
         float partialTick = Math.max(0.0F, Math.min(1.0F,
-                client.getDeltaTracker().getGameTimeDeltaPartialTick(true)));
+                context.deltaTracker().getGameTimeDeltaPartialTick(true)));
         Iterator<Map.Entry<Integer, Trail>> iterator = TRAILS.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<Integer, Trail> entry = iterator.next();
             Trail trail = entry.getValue();
             trail.points.removeIf(point -> now - point.time > lifetime);
-            ExperienceOrb liveOrb = level.getEntity(entry.getKey()) instanceof ExperienceOrb orb
+            ExperienceOrb liveOrb = context.level().getEntity(entry.getKey()) instanceof ExperienceOrb orb
                     && orb.isAlive() && !orb.isRemoved() ? orb : null;
             Vec3 livePoint = liveOrb == null ? null : trailPoint(liveOrb, partialTick, cfg);
             if (liveOrb != null) {
@@ -157,14 +155,13 @@ public final class TrailRenderer {
         renderTrails = List.copyOf(snapshot);
     }
 
-    public static void render(WorldRenderContext context) {
-        extract();
+    public static void render(LevelRenderContext context) {
         List<RenderTrail> snapshot = renderTrails;
         if (snapshot.isEmpty()) return;
 
         RenderPipeline pipeline = XpOrbTrailsClient.CONFIG.additiveGlow ? ADDITIVE_PIPELINE : TRANSLUCENT_PIPELINE;
         BufferBuilder vertices = new BufferBuilder(ALLOCATOR, pipeline.getVertexFormatMode(), pipeline.getVertexFormat());
-        Vec3 camera = Minecraft.getInstance().getCameraEntity() == null ? Vec3.ZERO : Minecraft.getInstance().getCameraEntity().getPosition(1.0F);
+        Vec3 camera = context.levelState().cameraRenderState.pos;
         TrailConfig cfg = XpOrbTrailsClient.CONFIG;
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
 
@@ -206,7 +203,7 @@ public final class TrailRenderer {
                 new Matrix4f());
         Minecraft client = Minecraft.getInstance();
         try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                () -> "XP Orb Trails", client.getMainRenderTarget().getColorTextureView(), OptionalInt.empty(),
+                () -> "XP Orb Trails", client.gameRenderer.mainRenderTarget().getColorTextureView(), OptionalInt.empty(),
                 client.getMainRenderTarget().getDepthTextureView(), OptionalDouble.empty())) {
             pass.setPipeline(pipeline);
             RenderSystem.bindDefaultUniforms(pass);
