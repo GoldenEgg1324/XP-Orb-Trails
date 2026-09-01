@@ -1,57 +1,62 @@
 package dev.goldenegg.xporbtrails;
 
-import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.platform.BlendFactor;
-import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.MappableRingBuffer;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.BindGroupLayouts;
-import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.resources.Identifier;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import dev.goldenegg.xporbtrails.mixin.RenderPipelinesAccessor;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.OptionalInt;
+
+import org.joml.Vector4f;
+import org.lwjgl.system.MemoryUtil;
 
 public final class TrailRenderer {
     private static final int CURVE_STEPS = 4;
     private static final int TUBE_FACES = 3;
     private static final int MAX_POINTS = 128;
-    private static final RenderPipeline ALPHA_PIPELINE = createPipeline("xp_orb_trails_alpha",
-            new BlendFunction(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA));
-    private static final RenderPipeline ADDITIVE_PIPELINE = createPipeline("xp_orb_trails_additive",
-            new BlendFunction(BlendFactor.SRC_ALPHA, BlendFactor.ONE));
-    private static final StagedVertexBuffer BUFFER =
-            new StagedVertexBuffer(() -> "XP Orb Trail Buffer", RenderType.SMALL_BUFFER_SIZE);
+    private static final RenderPipeline TRANSLUCENT_PIPELINE = RenderPipelines.register(
+            RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
+                    .withLocation(Identifier.fromNamespaceAndPath("xporbtrails", "pipeline/trail_translucent"))
+                    .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+                    .withBlend(BlendFunction.TRANSLUCENT)
+                    .withDepthWrite(false)
+                    .withCull(false)
+                    .build());
+    private static final RenderPipeline ADDITIVE_PIPELINE = RenderPipelines.register(
+            RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
+                    .withLocation(Identifier.fromNamespaceAndPath("xporbtrails", "pipeline/trail_additive"))
+                    .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+                    .withBlend(BlendFunction.ADDITIVE)
+                    .withDepthWrite(false)
+                    .withCull(false)
+                    .build());
+    private static final ByteBufferBuilder ALLOCATOR = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
     private static final Vector4f COLOR_MODULATOR = new Vector4f(1, 1, 1, 1);
-    private static final Vector3f MODEL_OFFSET = new Vector3f();
-    private static final Matrix4f TEXTURE_MATRIX = new Matrix4f();
+    private static MappableRingBuffer vertexBuffer;
     private static final Map<Integer, Trail> TRAILS = new LinkedHashMap<>();
     private static volatile List<RenderTrail> renderTrails = List.of();
     private static ClientLevel lastLevel;
@@ -94,29 +99,32 @@ public final class TrailRenderer {
             point = point.subtract(motion.scale(cfg.motionShift * t / speed));
         }
         if (cfg.cameraPush > 0.0 && client.gameRenderer != null) {
-            Vec3 away = point.subtract(client.gameRenderer.mainCamera().position());
+            Vec3 away = point.subtract(client.gameRenderer.getMainCamera().getPosition());
             double length = away.length();
             if (length > 1.0E-6) point = point.add(away.scale(cfg.cameraPush / length));
         }
         return point;
     }
 
-    public static synchronized void extract(LevelExtractionContext context) {
+    private static synchronized void extract() {
+        Minecraft client = Minecraft.getInstance();
+        ClientLevel level = client.level;
+        if (level == null) return;
         long now = System.nanoTime();
         TrailConfig cfg = XpOrbTrailsClient.CONFIG;
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
-        Vec3 camera = context.camera().position();
+        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         double rangeSq = cfg.renderRange * cfg.renderRange;
         List<RenderTrail> snapshot = new ArrayList<>();
 
         float partialTick = Math.max(0.0F, Math.min(1.0F,
-                context.deltaTracker().getGameTimeDeltaPartialTick(true)));
+                client.getDeltaTracker().getGameTimeDeltaPartialTick(true)));
         Iterator<Map.Entry<Integer, Trail>> iterator = TRAILS.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<Integer, Trail> entry = iterator.next();
             Trail trail = entry.getValue();
             trail.points.removeIf(point -> now - point.time > lifetime);
-            ExperienceOrb liveOrb = context.level().getEntity(entry.getKey()) instanceof ExperienceOrb orb
+            ExperienceOrb liveOrb = level.getEntity(entry.getKey()) instanceof ExperienceOrb orb
                     && orb.isAlive() && !orb.isRemoved() ? orb : null;
             Vec3 livePoint = liveOrb == null ? null : trailPoint(liveOrb, partialTick, cfg);
             if (liveOrb != null) {
@@ -147,17 +155,14 @@ public final class TrailRenderer {
         renderTrails = List.copyOf(snapshot);
     }
 
-    public static void render(LevelRenderContext context) {
+    public static void render(WorldRenderContext context) {
+        extract();
         List<RenderTrail> snapshot = renderTrails;
         if (snapshot.isEmpty()) return;
 
-        RenderPipeline pipeline = XpOrbTrailsClient.CONFIG.additiveGlow ? ADDITIVE_PIPELINE : ALPHA_PIPELINE;
-        VertexFormat format = pipeline.getVertexFormatBinding(0);
-        if (format == null) return;
-        PrimitiveTopology topology = pipeline.getPrimitiveTopology();
-        StagedVertexBuffer.Draw draw = BUFFER.appendDraw(format, topology);
-        VertexConsumer vertices = BUFFER.getVertexBuilder(draw);
-        Vec3 camera = context.levelState().cameraRenderState.pos;
+        RenderPipeline pipeline = XpOrbTrailsClient.CONFIG.additiveGlow ? ADDITIVE_PIPELINE : TRANSLUCENT_PIPELINE;
+        BufferBuilder vertices = new BufferBuilder(ALLOCATOR, pipeline.getVertexFormatMode(), pipeline.getVertexFormat());
+        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         TrailConfig cfg = XpOrbTrailsClient.CONFIG;
         long lifetime = (long) (cfg.lifetimeSeconds * 1_000_000_000L);
 
@@ -173,10 +178,43 @@ public final class TrailRenderer {
             }
         }
 
-        BUFFER.upload();
-        StagedVertexBuffer.ExecuteInfo info = BUFFER.getExecuteInfo(draw);
-        if (info != null) draw(info, pipeline);
-        BUFFER.endFrame();
+        draw(vertices.buildOrThrow(), pipeline);
+    }
+
+    private static void draw(MeshData mesh, RenderPipeline pipeline) {
+        MeshData.DrawState state = mesh.drawState();
+        VertexFormat format = state.format();
+        int requiredSize = state.vertexCount() * format.getVertexSize();
+        if (vertexBuffer == null || vertexBuffer.size() < requiredSize) {
+            if (vertexBuffer != null) vertexBuffer.close();
+            vertexBuffer = new MappableRingBuffer(() -> "XP Orb Trails vertices",
+                    GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_MAP_WRITE, requiredSize);
+        }
+
+        CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+        try (GpuBuffer.MappedView mapped = encoder.mapBuffer(
+                vertexBuffer.currentBuffer().slice(0, mesh.vertexBuffer().remaining()), false, true)) {
+            MemoryUtil.memCopy(mesh.vertexBuffer(), mapped.data());
+        }
+
+        mesh.sortQuads(ALLOCATOR, RenderSystem.getProjectionType().vertexSorting());
+        GpuBuffer indices = pipeline.getVertexFormat().uploadImmediateIndexBuffer(mesh.indexBuffer());
+        GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().writeTransform(
+                RenderSystem.getModelViewMatrix(), COLOR_MODULATOR, RenderSystem.getModelOffset(),
+                RenderSystem.getTextureMatrix(), 1.0F);
+        Minecraft client = Minecraft.getInstance();
+        try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                () -> "XP Orb Trails", client.getMainRenderTarget().getColorTextureView(), OptionalInt.empty(),
+                client.getMainRenderTarget().getDepthTextureView(), OptionalDouble.empty())) {
+            pass.setPipeline(pipeline);
+            RenderSystem.bindDefaultUniforms(pass);
+            pass.setUniform("DynamicTransforms", transforms);
+            pass.setVertexBuffer(0, vertexBuffer.currentBuffer());
+            pass.setIndexBuffer(indices, mesh.drawState().indexType());
+            pass.drawIndexed(0, 0, mesh.drawState().indexCount(), 1);
+        }
+        mesh.close();
+        vertexBuffer.rotate();
     }
 
     private static void appendTube(VertexConsumer out, List<Sample> samples, Vec3 camera,
@@ -390,44 +428,13 @@ public final class TrailRenderer {
         return (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
     }
 
-    private static void draw(StagedVertexBuffer.ExecuteInfo info, RenderPipeline pipeline) {
-        Minecraft client = Minecraft.getInstance();
-        GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().writeTransform(
-                RenderSystem.getModelViewMatrixCopy(), COLOR_MODULATOR, MODEL_OFFSET, TEXTURE_MATRIX);
-        RenderTarget target = client.gameRenderer.mainRenderTarget();
-        GpuTextureView color = target.getColorTextureView();
-        if (color == null) return;
-
-        try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                () -> "XP Orb Trails", color, Optional.empty(), target.getDepthTextureView(), OptionalDouble.empty())) {
-            pass.setPipeline(pipeline);
-            RenderSystem.bindDefaultUniforms(pass);
-            pass.setUniform("DynamicTransforms", transforms);
-            pass.setVertexBuffer(0, info.vertexBuffer().slice());
-            pass.setIndexBuffer(info.indexBuffer(), info.indexType());
-            pass.drawIndexed(info.indexCount(), 1, info.firstIndex(), info.baseVertex(), 0);
-        }
-    }
-
-    private static RenderPipeline createPipeline(String name, BlendFunction blend) {
-        return RenderPipelinesAccessor.xporbtrails$register(RenderPipeline.builder()
-                .withLocation(Identifier.fromNamespaceAndPath("xporbtrails", name))
-                .withBindGroupLayout(BindGroupLayouts.PROJECTION)
-                .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
-                .withVertexShader(Identifier.withDefaultNamespace("core/position_color"))
-                .withFragmentShader(Identifier.withDefaultNamespace("core/position_color"))
-                .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
-                .withPrimitiveTopology(PrimitiveTopology.QUADS)
-                .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
-                .withCull(false)
-                .withColorTargetState(new ColorTargetState(blend))
-                .build());
-    }
-
     public static synchronized void close() {
-        BUFFER.close();
         TRAILS.clear();
         renderTrails = List.of();
+        if (vertexBuffer != null) {
+            vertexBuffer.close();
+            vertexBuffer = null;
+        }
     }
 
     private static final class Trail {
