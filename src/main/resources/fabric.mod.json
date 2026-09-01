@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "xporbtrails",
-	"version": "1.0.0",
+	"version": "${version}",
 	"name": "XP Orb Trails",
 	"description": "Adds smooth, colorful, highly customizable trails and pickup flashes to experience orbs—without shaders.",
 	"authors": [
@@ -25,10 +25,10 @@
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.19.5",
-		"minecraft": "~26.2",
+		"fabricloader": ">=0.18.5",
+		"minecraft": "${minecraft_dependency}",
 		"java": ">=25",
-		"fabric-api": ">=0.158.0"
+		"fabric-api": "${fabric_api_dependency}"
 	},
 	"suggests": {
 		"modmenu": "*"
