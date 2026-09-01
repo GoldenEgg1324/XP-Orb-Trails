@@ -29,14 +29,14 @@ jobs:
         shell: bash
         run: |
           set +e
-          ./gradlew build
-          -Ploom_version=1.17.20
-          -Pminecraft_version=${{ matrix.minecraft-version }}
-          -Ploader_version=0.18.5
-          -Pfabric_api_version=${{ matrix.fabric-api-version }}
-          -Pmodmenu_version=18.0.0-beta.1
-          -Pversion=1.0.0+mc${{ matrix.minecraft-version }}
-          -Pminecraft_dependency=${{ matrix.minecraft-version }}
+          ./gradlew build \
+          -Ploom_version=1.17.20 \
+          -Pminecraft_version=${{ matrix.minecraft-version }} \
+          -Ploader_version=0.18.5 \
+          -Pfabric_api_version=${{ matrix.fabric-api-version }} \
+          -Pmodmenu_version=18.0.0-beta.1 \
+          -Pversion=1.0.0+mc${{ matrix.minecraft-version }} \
+          -Pminecraft_dependency=${{ matrix.minecraft-version }} \
           -Pfabric_api_dependency=">=${{ matrix.fabric-api-version }}" 2>&1 | tee build.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
