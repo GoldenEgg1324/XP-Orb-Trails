@@ -26,7 +26,9 @@ jobs:
           distribution: 'microsoft'
       - run: chmod +x ./gradlew
       - name: build
-        run: >-
+        shell: bash
+        run: |
+          set +e
           ./gradlew build
           -Ploom_version=1.17.20
           -Pminecraft_version=${{ matrix.minecraft-version }}
@@ -35,7 +37,13 @@ jobs:
           -Pmodmenu_version=18.0.0-beta.1
           -Pversion=1.0.0+mc${{ matrix.minecraft-version }}
           -Pminecraft_dependency=${{ matrix.minecraft-version }}
-          -Pfabric_api_dependency=">=${{ matrix.fabric-api-version }}"
+          -Pfabric_api_dependency=">=${{ matrix.fabric-api-version }}" 2>&1 | tee build.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            message=$(tail -c 5000 build.log | tr '\n' ' ')
+            echo "::error::$message"
+            exit "$status"
+          fi
       - uses: actions/upload-artifact@v7
         if: success()
         with:
