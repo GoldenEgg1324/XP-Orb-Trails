@@ -5,6 +5,8 @@ import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -47,7 +49,7 @@ public final class TrailRenderer {
                     .withLocation(Identifier.fromNamespaceAndPath("xporbtrails", "pipeline/trail_translucent"))
                     .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
                     .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-                    .withDepthWrite(false)
+                    .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
                     .withCull(false)
                     .build());
     private static final RenderPipeline ADDITIVE_PIPELINE = RenderPipelines.register(
@@ -55,7 +57,7 @@ public final class TrailRenderer {
                     .withLocation(Identifier.fromNamespaceAndPath("xporbtrails", "pipeline/trail_additive"))
                     .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
                     .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
-                    .withDepthWrite(false)
+                    .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
                     .withCull(false)
                     .build());
     private static final ByteBufferBuilder ALLOCATOR = new ByteBufferBuilder(RenderType.SMALL_BUFFER_SIZE);
