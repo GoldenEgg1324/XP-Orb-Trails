@@ -1,6 +1,6 @@
 package dev.goldenegg.xporbtrails;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -51,33 +51,33 @@ public final class ColorPickerScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.render(graphics, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
         int px = width / 2 - 80, py = 48, pw = 160, ph = 112;
-        graphics.drawCenteredString(font, title, width / 2, 16, 0xFFFFFFFF);
+        graphics.centeredText(font, title, width / 2, 16, 0xFFFFFFFF);
         int hueColor = hsvToRgb(hue, 1.0F, 1.0F);
         for (int x = 0; x < pw; x++) {
             float sat = x / (float) (pw - 1);
             graphics.fillGradient(px + x, py, px + x + 1, py + ph,
                     0xFF000000 | mix(0xFFFFFF, hueColor, sat), 0xFF000000);
         }
-        drawOutline(graphics,px - 1, py - 1, pw + 2, ph + 2, 0xFFFFFFFF);
+        graphics.outline(px - 1, py - 1, pw + 2, ph + 2, 0xFFFFFFFF);
         int sx = px + Math.round(saturation * (pw - 1));
         int sy = py + Math.round((1.0F - brightness) * (ph - 1));
-        drawOutline(graphics,sx - 3, sy - 3, 7, 7, 0xFFFFFFFF);
-        drawOutline(graphics,sx - 2, sy - 2, 5, 5, 0xFF000000);
+        graphics.outline(sx - 3, sy - 3, 7, 7, 0xFFFFFFFF);
+        graphics.outline(sx - 2, sy - 2, 5, 5, 0xFF000000);
 
         int hy = 174, hh = 12;
         for (int x = 0; x < pw; x++) {
             int color = hsvToRgb(x / (float) (pw - 1), 1.0F, 1.0F);
             graphics.fill(px + x, hy, px + x + 1, hy + hh, 0xFF000000 | color);
         }
-        drawOutline(graphics,px - 1, hy - 1, pw + 2, hh + 2, 0xFFFFFFFF);
+        graphics.outline(px - 1, hy - 1, pw + 2, hh + 2, 0xFFFFFFFF);
         int hx = px + Math.round(hue * (pw - 1));
-        drawOutline(graphics,hx - 2, hy - 2, 5, hh + 4, 0xFFFFFFFF);
+        graphics.outline(hx - 2, hy - 2, 5, hh + 4, 0xFFFFFFFF);
         graphics.fill(px + pw + 12, py, px + pw + 42, py + 30, 0xFF000000 | currentColor());
-        drawOutline(graphics,px + pw + 11, py - 1, 32, 32, 0xFFFFFFFF);
-        graphics.drawString(font, Component.translatable("screen.xporbtrails.hex"), px, 193, 0xFFA0A0A0);
+        graphics.outline(px + pw + 11, py - 1, 32, 32, 0xFFFFFFFF);
+        graphics.text(font, Component.translatable("screen.xporbtrails.hex"), px, 193, 0xFFA0A0A0);
     }
 
     @Override
@@ -126,13 +126,6 @@ public final class ColorPickerScreen extends Screen {
             hexBox.setValue(hex(color));
             syncingHex = false;
         }
-    }
-
-    private static void drawOutline(GuiGraphics graphics, int x, int y, int width, int height, int color) {
-        graphics.fill(x, y, x + width, y + 1, color);
-        graphics.fill(x, y + height - 1, x + width, y + height, color);
-        graphics.fill(x, y + 1, x + 1, y + height - 1, color);
-        graphics.fill(x + width - 1, y + 1, x + width, y + height - 1, color);
     }
 
     @Override public void onClose() { if (minecraft != null) minecraft.setScreen(parent); }
