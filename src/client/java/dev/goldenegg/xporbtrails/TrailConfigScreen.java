@@ -1,6 +1,6 @@
 package dev.goldenegg.xporbtrails;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -352,25 +352,18 @@ public final class TrailConfigScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.render(graphics, mouseX, mouseY, delta);
-        graphics.drawCenteredString(font, title, width / 2, 10, 0xFFFFFFFF);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
+        graphics.centeredText(font, title, width / 2, 10, 0xFFFFFFFF);
         if (page == Page.APPEARANCE) {
             int center = width / 2;
-            graphics.drawString(font, Component.translatable("screen.xporbtrails.start_color"), center - 154, 80, 0xFFA0A0A0);
-            graphics.drawString(font, Component.translatable("screen.xporbtrails.end_color"), center + 4, 80, 0xFFA0A0A0);
+            graphics.text(font, Component.translatable("screen.xporbtrails.start_color"), center - 154, 80, 0xFFA0A0A0);
+            graphics.text(font, Component.translatable("screen.xporbtrails.end_color"), center + 4, 80, 0xFFA0A0A0);
             graphics.fill(center - 178, 90, center - 158, 110, 0xFF000000 | XpOrbTrailsClient.CONFIG.startColor);
-            drawOutline(graphics,center - 178, 90, 20, 20, 0xFFFFFFFF);
+            graphics.outline(center - 178, 90, 20, 20, 0xFFFFFFFF);
             graphics.fill(center + 162, 90, center + 182, 110, 0xFF000000 | XpOrbTrailsClient.CONFIG.endColor);
-            drawOutline(graphics,center + 162, 90, 20, 20, 0xFFFFFFFF);
+            graphics.outline(center + 162, 90, 20, 20, 0xFFFFFFFF);
         }
-    }
-
-    private static void drawOutline(GuiGraphics graphics, int x, int y, int width, int height, int color) {
-        graphics.fill(x, y, x + width, y + 1, color);
-        graphics.fill(x, y + height - 1, x + width, y + height, color);
-        graphics.fill(x, y + 1, x + 1, y + height - 1, color);
-        graphics.fill(x + width - 1, y + 1, x + width, y + height - 1, color);
     }
 
     @Override
