@@ -3,8 +3,8 @@ package dev.goldenegg.xporbtrails;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.platform.BlendFactor;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -14,8 +14,8 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.fabricmc.fabric.api.client.rendering.v1.LevelExtractionContext;
-import net.fabricmc.fabric.api.client.rendering.v1.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelExtractionContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MappableRingBuffer;
@@ -46,7 +46,7 @@ public final class TrailRenderer {
             RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
                     .withLocation(Identifier.fromNamespaceAndPath("xporbtrails", "pipeline/trail_translucent"))
                     .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
-                    .withBlend(new BlendFunction(BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA))
+                    .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
                     .withDepthWrite(false)
                     .withCull(false)
                     .build());
@@ -54,7 +54,7 @@ public final class TrailRenderer {
             RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
                     .withLocation(Identifier.fromNamespaceAndPath("xporbtrails", "pipeline/trail_additive"))
                     .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
-                    .withBlend(new BlendFunction(BlendFactor.SRC_ALPHA, BlendFactor.ONE))
+                    .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
                     .withDepthWrite(false)
                     .withCull(false)
                     .build());
