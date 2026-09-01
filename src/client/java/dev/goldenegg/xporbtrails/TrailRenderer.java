@@ -199,7 +199,7 @@ public final class TrailRenderer {
         mesh.sortQuads(ALLOCATOR, RenderSystem.getProjectionType().vertexSorting());
         GpuBuffer indices = pipeline.getVertexFormat().uploadImmediateIndexBuffer(mesh.indexBuffer());
         GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().writeTransform(
-                RenderSystem.getModelViewMatrixCopy(), COLOR_MODULATOR, new Vector3f(),
+                RenderSystem.getModelViewMatrix(), COLOR_MODULATOR, new Vector3f(),
                 new Matrix4f());
         Minecraft client = Minecraft.getInstance();
         try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
